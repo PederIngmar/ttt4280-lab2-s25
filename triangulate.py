@@ -84,7 +84,7 @@ if __name__ == "__main__":
         input_dir = f"data/{angle}"
         files, datas = rpi.import_all_files(input_dir)
         for i, data in enumerate(datas):
-            print("File:", files[i])
+            #print("File:", files[i])
             d = delays(3.2e-05, data)
             #plot_crosscorrelation(data)
             #d = delays(3.2e-05, data)

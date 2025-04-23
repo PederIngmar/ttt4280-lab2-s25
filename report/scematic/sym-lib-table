@@ -1,0 +1,9 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "lab1")(type "KiCad")(uri "${KIPRJMOD}/lab1.kicad_sym")(options "")(descr ""))
+  (lib (name "MCP3201-edit")(type "KiCad")(uri "${KIPRJMOD}/MCP3201-edit.kicad_sym")(options "")(descr ""))
+  (lib (name "Raspberrypi-edit")(type "KiCad")(uri "${KIPRJMOD}/Raspberrypi-edit.kicad_sym")(options "")(descr ""))
+  (lib (name "Capasitor10-edit")(type "KiCad")(uri "${KIPRJMOD}/Capasitor10-edit.kicad_sym")(options "")(descr ""))
+  (lib (name "MCP3201-CI_SN")(type "KiCad")(uri "${KIPRJMOD}/MCP3201-CI_SN.kicad_sym")(options "")(descr ""))
+  (lib (name "Capasitors")(type "KiCad")(uri "${KIPRJMOD}/Capasitors.kicad_sym")(options "")(descr ""))
+)
