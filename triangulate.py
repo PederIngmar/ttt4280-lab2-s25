@@ -2,31 +2,97 @@ import numpy as np
 import os
 import glob
 from scipy.signal import detrend
+from scipy.interpolate import interp1d
 import raspi_import as rpi
 import matplotlib.pyplot as plt
 
-def delays(sample_period, data):
+def interpolate(signal):
+    interpolator = interp1d(np.arange(len(signal)), signal, kind='linear')
+    n = 2
+    newLength = n * len(signal)
+
+    interpolatedData = interpolator(np.linspace(0, len(signal) - 1, newLength))
+
+    return interpolatedData
+
+
+# def delays(sample_period, data):
+#     if data is None:
+#         return None
+#     data = data[:, 2:]
+#     peak_idx = np.argmax(data[:, 0])
+#     start = max(0,peak_idx-100)
+#     end = min(len(data[:, 0]),peak_idx+2000)
+#     D = {}
+#     channel_pairs = [(0, 1), (1, 2), (0, 2)]
+#     for cpair in channel_pairs:
+#         d1 = detrend(data[:, cpair[0]])
+#         #d1 = interpolate(d1)
+#         d2 = detrend(data[:, cpair[1]])
+#         #d2 = interpolate(d2)
+#         d1_window = d1[start:end]
+#         d2_window = d2[start:end]
+ 
+#         crosscorrelation = np.correlate(d1_window, d2_window, mode='full')
+#         lags = np.arange(-len(d1_window)+1, len(d1_window))
+
+#         max_lag = lags[np.argmax(crosscorrelation)]
+#         delta_t = max_lag*sample_period
+
+#         D[cpair] = delta_t
+
+#     return D
+
+def delays(sample_period, data, oversample_factor=10, kind='linear'):
+    """
+    Compute time delays between channels with sub‐sample precision
+    by upsampling the windowed signals.
+
+    oversample_factor: how many times finer to make the time axis
+    kind: interpolation type ('linear','cubic', etc.)
+    """
     if data is None:
         return None
     data = data[:, 2:]
+    # find the window around the first channel’s peak
     peak_idx = np.argmax(data[:, 0])
-    start = max(0,peak_idx-100)
-    end = min(len(data[:, 0]),peak_idx+2000)
+    start = max(0, peak_idx - 100)
+    end   = min(len(data[:, 0]), peak_idx + 2000)
+
     D = {}
-    channel_pairs = [(0, 1), (1, 2), (0, 2)]
+    channel_pairs = [(0,1), (1,2), (0,2)]
+
     for cpair in channel_pairs:
+        # detrend each channel
         d1 = detrend(data[:, cpair[0]])
         d2 = detrend(data[:, cpair[1]])
-        d1_window = d1[start:end]
-        d2_window = d2[start:end]
 
-        crosscorrelation = np.correlate(d1_window, d2_window, mode='full')
-        lags = np.arange(-len(d1_window)+1, len(d1_window))
+        # restrict to the window
+        w1 = d1[start:end]
+        w2 = d2[start:end]
 
-        max_lag = lags[np.argmax(crosscorrelation)]
-        delta_t = max_lag*sample_period
+        # original time axis for the window
+        t_orig = np.arange(len(w1)) * sample_period
 
-        D[cpair] = delta_t
+        # build interpolators
+        f1 = interp1d(t_orig, w1, kind=kind)
+        f2 = interp1d(t_orig, w2, kind=kind)
+
+        # new, finer time axis
+        n_fine = len(w1) * oversample_factor
+        t_fine = np.linspace(t_orig[0], t_orig[-1], n_fine)
+
+        # evaluate upsampled signals
+        u1 = f1(t_fine)
+        u2 = f2(t_fine)
+
+        # full cross‐correlation at fine resolution
+        cc = np.correlate(u1, u2, mode='full')
+        lags = np.arange(-len(u1) + 1, len(u1)) * (t_fine[1] - t_fine[0])
+
+        # pick the lag with maximum correlation
+        max_lag = lags[np.argmax(cc)]
+        D[cpair] = max_lag
 
     return D
 
@@ -90,12 +156,6 @@ if __name__ == "__main__":
             #d = delays(3.2e-05, data)
             est_angle = estimate_angle(d)
             print("Real angle:", angle, "Estimated angle:", est_angle, "Difference:", est_angle - angle)
-
-
-
-
-
-
 
 
 def compute_statistics():
